@@ -1,0 +1,1230 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080d18">
+<title>Neon Snake | Jogo da Cobrinha</title>
+
+<style>
+/* =========================
+   1. CONFIGURAÇÕES GERAIS
+========================= */
+:root {
+  --bg: #080d18;
+  --panel: #101a2b;
+  --panel-light: #17253a;
+  --neon: #55ff9b;
+  --neon-blue: #41c9ff;
+  --text: #edf5ff;
+  --muted: #8b9bb4;
+  --danger: #ff5577;
+  --border: rgba(130, 170, 210, .17);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 28px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", sans-serif;
+  background:
+    radial-gradient(ellipse at 50% 0%, #142d40 0%, transparent 48%),
+    var(--bg);
+}
+
+button {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  width: 100%;
+  max-width: 620px;
+}
+
+/* =========================
+   2. CABEÇALHO
+========================= */
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  color: var(--neon);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 7px 0 5px;
+  font-size: clamp(2rem, 8vw, 3.5rem);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -.055em;
+}
+
+h1 span {
+  color: var(--neon);
+  text-shadow: 0 0 25px rgba(85, 255, 155, .22);
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: .92rem;
+}
+
+/* =========================
+   3. PAINEL DE PONTUAÇÃO
+========================= */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stat {
+  padding: 13px 10px;
+  text-align: center;
+  background: rgba(16, 26, 43, .92);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+}
+
+.stat-label {
+  display: block;
+  color: var(--muted);
+  font-size: .69rem;
+  font-weight: 750;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  display: block;
+  margin-top: 4px;
+  font-size: clamp(1.2rem, 4vw, 1.7rem);
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-value.score {
+  color: var(--neon);
+}
+
+.stat-value.record {
+  color: var(--neon-blue);
+}
+
+/* =========================
+   4. TABULEIRO
+========================= */
+.game-panel {
+  padding: 12px;
+  background: linear-gradient(145deg, #152239, #0c1423);
+  border: 1px solid rgba(120, 170, 220, .25);
+  border-radius: 20px;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, .35),
+    0 0 35px rgba(65, 201, 255, .035);
+}
+
+.board-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(85, 255, 155, .2);
+  border-radius: 11px;
+  background: #08121c;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+  background: rgba(5, 12, 22, .83);
+  backdrop-filter: blur(5px);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-icon {
+  font-size: clamp(2.4rem, 10vw, 4rem);
+  margin-bottom: 12px;
+  filter: drop-shadow(0 0 15px rgba(85, 255, 155, .2));
+}
+
+.overlay h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 6vw, 2rem);
+  font-weight: 900;
+}
+
+.overlay p {
+  max-width: 310px;
+  margin: 10px 0 20px;
+  color: #b5c3d8;
+  font-size: .9rem;
+  line-height: 1.6;
+}
+
+.overlay .accent {
+  color: var(--neon);
+}
+
+/* =========================
+   5. BOTÕES
+========================= */
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.btn {
+  min-height: 47px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--text);
+  background: var(--panel-light);
+  font-size: .88rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: transform .15s, border-color .15s, background .15s;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: var(--neon);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(.98);
+}
+
+.btn:focus-visible,
+.dpad button:focus-visible {
+  outline: 2px solid var(--neon-blue);
+  outline-offset: 3px;
+}
+
+.btn:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  color: #07140d;
+  background: var(--neon);
+  border-color: var(--neon);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #8bffb8;
+}
+
+.btn-secondary {
+  background: #14243a;
+}
+
+/* =========================
+   6. INFORMAÇÕES DE STATUS
+========================= */
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0;
+  color: var(--muted);
+  font-size: .82rem;
+  text-align: center;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #8190a6;
+}
+
+.status-dot.playing {
+  background: var(--neon);
+  box-shadow: 0 0 10px rgba(85, 255, 155, .7);
+}
+
+.status-dot.paused {
+  background: #ffc45c;
+}
+
+.status-dot.over {
+  background: var(--danger);
+}
+
+/* =========================
+   7. CONTROLES PARA CELULAR
+========================= */
+.mobile-controls {
+  display: none;
+  justify-content: center;
+  margin: 18px 0 5px;
+}
+
+.dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  grid-template-rows: repeat(2, 49px);
+  gap: 6px;
+  grid-template-areas:
+    ". up ."
+    "left down right";
+}
+
+.dpad button {
+  border: 1px solid rgba(85, 255, 155, .25);
+  border-radius: 12px;
+  background: #13233a;
+  color: var(--neon);
+  font-size: 1.4rem;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.dpad button:active {
+  background: #25415a;
+  transform: scale(.95);
+}
+
+.dpad .up    { grid-area: up; }
+.dpad .left  { grid-area: left; }
+.dpad .down  { grid-area: down; }
+.dpad .right { grid-area: right; }
+
+/* =========================
+   8. INSTRUÇÕES E RODAPÉ
+========================= */
+.instructions {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(16, 26, 43, .55);
+}
+
+.instructions h3 {
+  margin: 0 0 12px;
+  font-size: .83rem;
+}
+
+.key-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: .78rem;
+}
+
+kbd {
+  min-width: 28px;
+  padding: 5px 7px;
+  border: 1px solid #34445b;
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  color: #e5efff;
+  background: #18263b;
+  font-family: inherit;
+  font-size: .75rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.footer {
+  margin-top: 17px;
+  color: #65758c;
+  text-align: center;
+  font-size: .72rem;
+}
+
+@media (max-width: 520px) {
+  body {
+    padding: 20px 12px;
+    align-items: flex-start;
+  }
+
+  .header {
+    margin-bottom: 18px;
+  }
+
+  .game-panel {
+    padding: 8px;
+    border-radius: 15px;
+  }
+
+  .stats {
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .stat {
+    padding: 10px 4px;
+    border-radius: 10px;
+  }
+
+  .stat-label {
+    font-size: .59rem;
+    letter-spacing: .04em;
+  }
+
+  .actions {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .btn {
+    padding: 10px 6px;
+    font-size: .8rem;
+  }
+
+  .mobile-controls {
+    display: flex;
+  }
+
+  .instructions {
+    margin-top: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+</style>
+</head>
+
+<body>
+<main class="app">
+
+  <header class="header">
+    <div class="eyebrow">◆ Arcade digital ◆</div>
+    <h1>NEON <span>SNAKE</span></h1>
+    <p class="subtitle">Colete energia. Cresça. Sobreviva.</p>
+  </header>
+
+  <section class="stats" aria-label="Estatísticas da partida">
+    <div class="stat">
+      <span class="stat-label">Pontuação</span>
+      <span class="stat-value score" id="score">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Recorde</span>
+      <span class="stat-value record" id="record">0</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Nível</span>
+      <span class="stat-value" id="level">1</span>
+    </div>
+  </section>
+
+  <section class="game-panel" aria-label="Área do jogo">
+    <div class="board-wrap">
+      <canvas
+        id="board"
+        width="600"
+        height="600"
+        aria-label="Tabuleiro do jogo Snake com 20 linhas e 20 colunas"
+      ></canvas>
+
+      <div class="overlay" id="overlay">
+        <div class="overlay-icon" id="overlayIcon">🐍</div>
+        <h2 id="overlayTitle">Pronto para jogar?</h2>
+        <p id="overlayText">
+          Use as setas ou WASD para controlar a cobrinha.
+          Pegue a energia e não bata nas paredes!
+        </p>
+        <button class="btn btn-primary" id="overlayButton">
+          ▶ Iniciar partida
+        </button>
+      </div>
+    </div>
+
+    <div class="status" aria-live="polite">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Aguardando início</span>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="startBtn">
+        ▶ Iniciar
+      </button>
+      <button class="btn btn-secondary" id="pauseBtn" disabled>
+        Ⅱ Pausar
+      </button>
+      <button class="btn btn-secondary" id="restartBtn">
+        ↻ Reiniciar
+      </button>
+      <button class="btn btn-secondary" id="soundHintBtn">
+        ⌨ Controles
+      </button>
+    </div>
+  </section>
+
+  <section class="mobile-controls" aria-label="Controles direcionais">
+    <div class="dpad">
+      <button class="up" data-dir="up" aria-label="Mover para cima">▲</button>
+      <button class="left" data-dir="left" aria-label="Mover para esquerda">◀</button>
+      <button class="down" data-dir="down" aria-label="Mover para baixo">▼</button>
+      <button class="right" data-dir="right" aria-label="Mover para direita">▶</button>
+    </div>
+  </section>
+
+  <section class="instructions" id="instructions">
+    <h3>🎮 Como jogar</h3>
+    <div class="key-row">
+      <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
+      <span>ou use as teclas direcionais</span>
+    </div>
+    <div class="key-row">
+      <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+      <span>movimentação alternativa</span>
+    </div>
+    <div class="key-row">
+      <kbd>ESPAÇO</kbd>
+      <span>pausar ou retomar a partida</span>
+    </div>
+    <div class="key-row">
+      <span>🍎 Cada alimento vale 10 pontos. A cada 50 pontos, o nível aumenta e a cobrinha acelera.</span>
+    </div>
+  </section>
+
+  <footer class="footer">
+    NEON SNAKE · HTML5 + CSS3 + JavaScript · Sem dependências externas
+  </footer>
+</main>
+
+<script>
+"use strict";
+
+/* ==========================================
+   1. ELEMENTOS DA INTERFACE E CONFIGURAÇÕES
+========================================== */
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
+
+const ui = {
+  score: document.getElementById("score"),
+  record: document.getElementById("record"),
+  level: document.getElementById("level"),
+  overlay: document.getElementById("overlay"),
+  overlayIcon: document.getElementById("overlayIcon"),
+  overlayTitle: document.getElementById("overlayTitle"),
+  overlayText: document.getElementById("overlayText"),
+  overlayButton: document.getElementById("overlayButton"),
+  start: document.getElementById("startBtn"),
+  pause: document.getElementById("pauseBtn"),
+  restart: document.getElementById("restartBtn"),
+  statusText: document.getElementById("statusText"),
+  statusDot: document.getElementById("statusDot"),
+  instructions: document.getElementById("instructions")
+};
+
+const COLS = 20;
+const ROWS = 20;
+const CELL = canvas.width / COLS;
+const POINTS_PER_FOOD = 10;
+
+const INITIAL_SPEED = 165;
+const MIN_SPEED = 65;
+const SPEED_STEP = 8;
+
+/*
+  Estado possível:
+  ready    = aguardando início
+  playing  = partida em andamento
+  paused   = partida pausada
+  over     = derrota
+  won      = vitória
+*/
+let state = "ready";
+
+let snake = [];
+let food = null;
+let direction = { x: 1, y: 0 };
+let nextDirection = { x: 1, y: 0 };
+let directionChanged = false;
+
+let score = 0;
+let record = loadRecord();
+let level = 1;
+let timerId = null;
+let lastTick = 0;
+
+/* ==========================================
+   2. RECORDES LOCAIS
+========================================== */
+function loadRecord() {
+  try {
+    const value = Number(localStorage.getItem("neonSnakeRecord"));
+    return Number.isFinite(value) && value >= 0 ? value : 0;
+  } catch (error) {
+    // O jogo continua funcionando se o armazenamento estiver bloqueado.
+    return 0;
+  }
+}
+
+function saveRecord() {
+  try {
+    localStorage.setItem("neonSnakeRecord", String(record));
+  } catch (error) {
+    // O recorde permanece disponível durante a sessão.
+  }
+}
+
+/* ==========================================
+   3. INICIALIZAÇÃO E REINÍCIO
+========================================== */
+function resetGame() {
+  stopTimer();
+
+  score = 0;
+  level = 1;
+
+  // A cobrinha começa no centro do tabuleiro.
+  snake = [
+    { x: 9, y: 10 },
+    { x: 8, y: 10 },
+    { x: 7, y: 10 }
+  ];
+
+  direction = { x: 1, y: 0 };
+  nextDirection = { x: 1, y: 0 };
+  directionChanged = false;
+
+  food = createFood();
+  updateStats();
+  draw();
+}
+
+function startGame() {
+  if (state === "playing") return;
+
+  if (state === "over" || state === "won") {
+    resetGame();
+  } else if (state === "ready") {
+    resetGame();
+  }
+
+  state = "playing";
+  hideOverlay();
+  updateStatus();
+  updateButtons();
+
+  lastTick = performance.now();
+  scheduleNextTick();
+}
+
+function restartGame() {
+  resetGame();
+  startGame();
+}
+
+function stopTimer() {
+  if (timerId !== null) {
+    clearTimeout(timerId);
+    timerId = null;
+  }
+}
+
+/* ==========================================
+   4. VELOCIDADE E DIFICULDADE
+========================================== */
+function getSpeed() {
+  // A velocidade aumenta gradualmente, com um limite mínimo.
+  return Math.max(
+    MIN_SPEED,
+    INITIAL_SPEED - (level - 1) * SPEED_STEP
+  );
+}
+
+function updateLevel() {
+  level = Math.floor(score / 50) + 1;
+}
+
+/* ==========================================
+   5. GERAÇÃO DO ALIMENTO
+========================================== */
+function createFood() {
+  const available = [];
+
+  // Lista todas as casas que não estão ocupadas pela cobrinha.
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const occupied = snake.some(
+        segment => segment.x === x && segment.y === y
+      );
+
+      if (!occupied) {
+        available.push({ x, y });
+      }
+    }
+  }
+
+  // Não existem mais casas livres: o jogador venceu.
+  if (available.length === 0) {
+    return null;
+  }
+
+  // Escolhe uma posição livre sem tentativas aleatórias repetidas.
+  const index = Math.floor(Math.random() * available.length);
+  return available[index];
+}
+
+/* ==========================================
+   6. CONTROLES E DIREÇÃO
+========================================== */
+function changeDirection(newDirection) {
+  if (state !== "playing" && state !== "ready") return;
+
+  // Impede várias alterações de direção no mesmo ciclo.
+  if (directionChanged) return;
+
+  // Não permite uma inversão instantânea de 180 graus.
+  const isReverse =
+    newDirection.x === -direction.x &&
+    newDirection.y === -direction.y;
+
+  if (isReverse) return;
+
+  // Ignora a direção atual.
+  if (
+    newDirection.x === direction.x &&
+    newDirection.y === direction.y
+  ) {
+    return;
+  }
+
+  nextDirection = { ...newDirection };
+  directionChanged = true;
+}
+
+const directions = {
+  up:    { x: 0, y: -1 },
+  down:  { x: 0, y: 1 },
+  left:  { x: -1, y: 0 },
+  right: { x: 1, y: 0 }
+};
+
+document.addEventListener("keydown", event => {
+  const key = event.key.toLowerCase();
+
+  const keyDirections = {
+    arrowup: directions.up,
+    w: directions.up,
+    arrowdown: directions.down,
+    s: directions.down,
+    arrowleft: directions.left,
+    a: directions.left,
+    arrowright: directions.right,
+    d: directions.right
+  };
+
+  if (keyDirections[key]) {
+    // Evita que as setas rolem a página.
+    event.preventDefault();
+
+    if (state === "ready") {
+      startGame();
+    }
+
+    changeDirection(keyDirections[key]);
+    return;
+  }
+
+  if (key === " " || key === "spacebar") {
+    event.preventDefault();
+
+    if (state === "playing") {
+      pauseGame();
+    } else if (state === "paused") {
+      resumeGame();
+    } else if (state === "ready") {
+      startGame();
+    } else {
+      restartGame();
+    }
+  }
+});
+
+// Botões direcionais para celulares e tablets.
+document.querySelectorAll(".dpad button").forEach(button => {
+  button.addEventListener("pointerdown", event => {
+    event.preventDefault();
+
+    if (state === "ready") {
+      startGame();
+    }
+
+    const dir = directions[button.dataset.dir];
+    if (dir) changeDirection(dir);
+  });
+});
+
+/* ==========================================
+   7. PAUSA E RETOMADA
+========================================== */
+function pauseGame() {
+  if (state !== "playing") return;
+
+  state = "paused";
+  stopTimer();
+
+  showOverlay(
+    "Ⅱ",
+    "Jogo pausado",
+    "Respire fundo. Sua cobrinha está esperando!",
+    "▶ Retomar partida",
+    resumeGame
+  );
+
+  updateStatus();
+  updateButtons();
+  draw();
+}
+
+function resumeGame() {
+  if (state !== "paused") return;
+
+  state = "playing";
+  hideOverlay();
+
+  updateStatus();
+  updateButtons();
+
+  lastTick = performance.now();
+  scheduleNextTick();
+}
+
+/* ==========================================
+   8. CICLO PRINCIPAL DO JOGO
+========================================== */
+function scheduleNextTick() {
+  stopTimer();
+
+  if (state !== "playing") return;
+
+  timerId = setTimeout(() => {
+    timerId = null;
+
+    if (state !== "playing") return;
+
+    gameTick();
+    draw();
+
+    if (state === "playing") {
+      scheduleNextTick();
+    }
+  }, getSpeed());
+}
+
+function gameTick() {
+  // Confirma a única direção recebida para este ciclo.
+  direction = { ...nextDirection };
+  directionChanged = false;
+
+  const head = snake[0];
+
+  const newHead = {
+    x: head.x + direction.x,
+    y: head.y + direction.y
+  };
+
+  // Colisão com as paredes.
+  if (
+    newHead.x < 0 ||
+    newHead.x >= COLS ||
+    newHead.y < 0 ||
+    newHead.y >= ROWS
+  ) {
+    endGame(false);
+    return;
+  }
+
+  const eating = food !== null &&
+    newHead.x === food.x &&
+    newHead.y === food.y;
+
+  /*
+    Quando não come, a cauda sai nesta rodada.
+    Por isso, entrar na casa ocupada apenas pela cauda
+    que está prestes a sair não é considerado colisão.
+  */
+  const bodyToCheck = eating ? snake : snake.slice(0, -1);
+
+  const hitBody = bodyToCheck.some(
+    segment => segment.x === newHead.x &&
+               segment.y === newHead.y
+  );
+
+  if (hitBody) {
+    endGame(false);
+    return;
+  }
+
+  snake.unshift(newHead);
+
+  if (eating) {
+    score += POINTS_PER_FOOD;
+
+    if (score > record) {
+      record = score;
+      saveRecord();
+    }
+
+    updateLevel();
+    food = createFood();
+    updateStats();
+
+    // O tabuleiro foi totalmente ocupado.
+    if (food === null) {
+      endGame(true);
+      return;
+    }
+  } else {
+    snake.pop();
+  }
+}
+
+/* ==========================================
+   9. DERROTA E VITÓRIA
+========================================== */
+function endGame(victory) {
+  stopTimer();
+
+  state = victory ? "won" : "over";
+
+  if (victory) {
+    showOverlay(
+      "🏆",
+      "Vitória absoluta!",
+      "Você ocupou todas as casas do tabuleiro. Uma partida perfeita!",
+      "↻ Jogar novamente",
+      restartGame
+    );
+  } else {
+    showOverlay(
+      "💥",
+      "Fim de jogo!",
+      `Você fez ${score} pontos. Que tal tentar superar seu recorde?`,
+      "↻ Tentar novamente",
+      restartGame
+    );
+  }
+
+  updateStatus();
+  updateButtons();
+}
+
+/* ==========================================
+   10. OVERLAY E INTERFACE
+========================================== */
+let overlayAction = startGame;
+
+function showOverlay(icon, title, message, buttonText, action) {
+  ui.overlayIcon.textContent = icon;
+  ui.overlayTitle.textContent = title;
+  ui.overlayText.textContent = message;
+  ui.overlayButton.textContent = buttonText;
+
+  overlayAction = action;
+  ui.overlay.classList.remove("hidden");
+}
+
+function hideOverlay() {
+  ui.overlay.classList.add("hidden");
+}
+
+ui.overlayButton.addEventListener("click", () => {
+  overlayAction();
+});
+
+ui.start.addEventListener("click", () => {
+  if (state === "paused") {
+    resumeGame();
+  } else if (state !== "playing") {
+    startGame();
+  }
+});
+
+ui.pause.addEventListener("click", () => {
+  if (state === "playing") {
+    pauseGame();
+  } else if (state === "paused") {
+    resumeGame();
+  }
+});
+
+ui.restart.addEventListener("click", restartGame);
+
+ui.soundHintBtn.addEventListener("click", () => {
+  ui.instructions.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
+});
+
+function updateStats() {
+  ui.score.textContent = score;
+  ui.record.textContent = record;
+  ui.level.textContent = level;
+}
+
+function updateStatus() {
+  const messages = {
+    ready: "Aguardando início",
+    playing: "Partida em andamento",
+    paused: "Partida pausada",
+    over: "Partida encerrada",
+    won: "Vitória conquistada!"
+  };
+
+  ui.statusText.textContent = messages[state];
+
+  ui.statusDot.className = "status-dot";
+
+  if (state === "playing") {
+    ui.statusDot.classList.add("playing");
+  } else if (state === "paused") {
+    ui.statusDot.classList.add("paused");
+  } else if (state === "over" || state === "won") {
+    ui.statusDot.classList.add("over");
+  }
+}
+
+function updateButtons() {
+  ui.start.disabled = state === "playing";
+  ui.pause.disabled = state !== "playing" && state !== "paused";
+
+  if (state === "paused") {
+    ui.start.textContent = "▶ Retomar";
+    ui.pause.textContent = "▶ Retomar";
+  } else {
+    ui.start.textContent =
+      state === "playing" ? "▶ Em andamento" : "▶ Iniciar";
+
+    ui.pause.textContent = "Ⅱ Pausar";
+  }
+}
+
+/* ==========================================
+   11. DESENHO DO TABULEIRO
+========================================== */
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawBackground();
+  drawFood();
+  drawSnake();
+}
+
+function drawBackground() {
+  ctx.fillStyle = "#08121c";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grade discreta para facilitar a leitura das casas.
+  ctx.strokeStyle = "rgba(111, 155, 185, 0.09)";
+  ctx.lineWidth = 1;
+
+  for (let x = 0; x <= COLS; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * CELL, 0);
+    ctx.lineTo(x * CELL, canvas.height);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y <= ROWS; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * CELL);
+    ctx.lineTo(canvas.width, y * CELL);
+    ctx.stroke();
+  }
+}
+
+function drawSnake() {
+  snake.forEach((segment, index) => {
+    const padding = index === 0 ? 2 : 2.5;
+    const x = segment.x * CELL + padding;
+    const y = segment.y * CELL + padding;
+    const size = CELL - padding * 2;
+
+    ctx.save();
+
+    if (index === 0) {
+      // Cabeça com brilho.
+      ctx.shadowColor = "#55ff9b";
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = "#8bffb8";
+    } else {
+      const ratio = index / Math.max(snake.length, 1);
+      ctx.fillStyle = `hsl(${145 - ratio * 30}, 85%, ${
+        Math.max(35, 58 - ratio * 18)
+      }%)`;
+    }
+
+    roundedRect(ctx, x, y, size, size, 5);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+
+    if (index === 0) {
+      drawEyes(segment);
+    }
+
+    ctx.restore();
+  });
+}
+
+function drawEyes(head) {
+  // Os olhos acompanham a orientação da cabeça.
+  const centerX = head.x * CELL + CELL / 2;
+  const centerY = head.y * CELL + CELL / 2;
+
+  const forwardX = direction.x * 4.3;
+  const forwardY = direction.y * 4.3;
+  const sideX = -direction.y * 4.2;
+  const sideY = direction.x * 4.2;
+
+  ctx.fillStyle = "#092019";
+
+  for (const sign of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(
+      centerX + forwardX + sideX * sign,
+      centerY + forwardY + sideY * sign,
+      2,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+}
+
+function drawFood() {
+  if (!food) return;
+
+  const centerX = food.x * CELL + CELL / 2;
+  const centerY = food.y * CELL + CELL / 2;
+
+  ctx.save();
+  ctx.shadowColor = "#ff5577";
+  ctx.shadowBlur = 17;
+
+  ctx.fillStyle = "#ff5577";
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, CELL * 0.31, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+
+  // Pequeno brilho no alimento.
+  ctx.fillStyle = "#ffd4df";
+  ctx.beginPath();
+  ctx.arc(
+    centerX - CELL * 0.09,
+    centerY - CELL * 0.1,
+    CELL * 0.08,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+
+  // Folha.
+  ctx.fillStyle = "#55ff9b";
+  ctx.beginPath();
+  ctx.ellipse(
+    centerX + CELL * 0.12,
+    centerY - CELL * 0.3,
+    CELL * 0.1,
+    CELL * 0.05,
+    -0.6,
+    0,
+    Math.PI * 2
+  );
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function roundedRect(context, x, y, width, height, radius) {
+  context.beginPath();
+  context.roundRect(x, y, width, height, radius);
+  context.fill();
+}
+
+/* ==========================================
+   12. VISIBILIDADE DA ABA
+========================================== */
+// Não deixa a partida continuar escondida em segundo plano.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && state === "playing") {
+    pauseGame();
+  }
+});
+
+/* ==========================================
+   13. PREPARAÇÃO INICIAL
+========================================== */
+resetGame();
+updateStats();
+updateStatus();
+updateButtons();
+draw();
+</script>
+</body>
+</html>
